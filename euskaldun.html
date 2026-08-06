@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Euskaldun · Aprende euskera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green: #58CC02;
+    --green-dark: #4CAF00;
+    --green-deep: #3C9600;
+    --blue: #1CB0F6;
+    --blue-dark: #1899D6;
+    --gold: #FFC800;
+    --gold-dark: #E5A400;
+    --red: #FF4B4B;
+    --red-dark: #E63E3E;
+    --bg: #FFFFFF;
+    --bg-soft: #F7F7F7;
+    --ink: #3C3C3C;
+    --ink-soft: #777777;
+    --line: #E5E5E5;
+    --purple: #CE82FF;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg-soft);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  h1,h2,h3, .display{
+    font-family: 'Baloo 2', sans-serif;
+  }
+  button{ font-family: inherit; cursor: pointer; }
+  .screen{ display:none; min-height:100vh; }
+  .screen.active{ display:block; }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    position: sticky; top:0; z-index: 20;
+    background: var(--bg);
+    border-bottom: 2px solid var(--line);
+    padding: 12px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+    max-width: 640px; margin: 0 auto;
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Baloo 2'; font-weight:800; font-size:20px; color: var(--green-deep);
+  }
+  .brand-badge{
+    width:34px; height:34px; border-radius:10px; background: var(--green);
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+  }
+  .stats{ display:flex; gap:16px; }
+  .stat{ display:flex; align-items:center; gap:5px; font-weight:800; font-size:15px; }
+  .stat.streak{ color: var(--gold-dark); }
+  .stat.gems{ color: var(--blue-dark); }
+  .stat.hearts{ color: var(--red); }
+
+  /* ---------- PATH SCREEN ---------- */
+  .path-wrap{ max-width: 640px; margin: 0 auto; padding: 40px 20px 100px; }
+  .path-header{ text-align:center; margin-bottom: 36px; }
+  .path-header .kicker{ color: var(--ink-soft); font-weight:700; letter-spacing: .04em; text-transform:uppercase; font-size:12px; }
+  .path-header h1{ font-size: 26px; margin: 6px 0 0; color:#4B4B4B; }
+
+  .path{ position: relative; display:flex; flex-direction: column; align-items:center; gap: 26px; }
+  .path-node{ position: relative; }
+  .node-btn{
+    width: 82px; height:82px; border-radius: 50%;
+    border: none; display:flex; align-items:center; justify-content:center;
+    font-size: 32px; position:relative; box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+    transition: transform .08s ease;
+  }
+  .node-btn:active{ transform: translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,.15); }
+  .node-btn.locked{ background: #E5E5E5; box-shadow: 0 6px 0 #CFCFCF; color:#AFAFAF; cursor:default; }
+  .node-btn.available{ background: var(--green); box-shadow: 0 6px 0 var(--green-deep); color:#fff; }
+  .node-btn.done{ background: var(--gold); box-shadow: 0 6px 0 var(--gold-dark); color:#fff; }
+  .node-btn.chest{ background: var(--purple); box-shadow: 0 6px 0 #A34FE0; color:#fff; }
+  .node-btn.chest.locked{ background:#E5E5E5; box-shadow:0 6px 0 #CFCFCF; }
+  .node-btn.mastered{ background: linear-gradient(135deg, var(--gold), #FFA800); box-shadow: 0 6px 0 var(--gold-dark); color:#fff; }
+  .node-ring{
+    position:absolute; inset:-8px; border-radius:50%;
+    border: 3px dashed rgba(88,204,2,.5);
+    animation: spin 9s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .node-label{
+    position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    margin-top:8px; white-space:nowrap; font-weight:800; font-size:13px; color:#6b6b6b;
+    text-align:center; width:140px;
+  }
+  .path-node:nth-child(4n+1) .node-wrap{ margin-left: -70px; }
+  .path-node:nth-child(4n+3) .node-wrap{ margin-left: 70px; }
+  .start-tag{
+    position:absolute; top:-38px; left:50%; transform:translateX(-50%);
+    background:#fff; border:2px solid var(--green); color:var(--green-deep);
+    font-weight:800; font-size:11px; padding:4px 10px; border-radius:8px;
+    box-shadow: 0 3px 0 rgba(0,0,0,.05); white-space:nowrap;
+  }
+  .shake{ animation: shake .35s; }
+  @keyframes shake{ 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+
+  /* ---------- LESSON SCREEN ---------- */
+  .lesson-top{
+    max-width: 640px; margin:0 auto; padding: 16px 20px; display:flex; align-items:center; gap:14px;
+  }
+  .close-btn{
+    background:none; border:none; font-size:22px; color:#AFAFAF; font-weight:800;
+  }
+  .progress-track{ flex:1; height:16px; background:var(--line); border-radius:10px; overflow:hidden; }
+  .progress-fill{ height:100%; background: var(--green); border-radius:10px; transition: width .3s ease; }
+  .hearts-mini{ color: var(--red); font-weight:800; display:flex; align-items:center; gap:4px; }
+
+  .exercise-wrap{ max-width: 640px; margin: 0 auto; padding: 10px 20px 140px; }
+  .ex-kicker{ color: var(--ink-soft); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.03em; margin-bottom: 14px;}
+  .word-card{
+    background:#fff; border:2px solid var(--line); border-radius:16px;
+    padding: 28px 22px; display:flex; align-items:center; gap:18px; margin-bottom: 26px;
+  }
+  .audio-btn{
+    flex-shrink:0; width:58px; height:58px; border-radius:50%; border:none;
+    background: var(--blue); color:#fff; font-size: 24px; box-shadow: 0 4px 0 var(--blue-dark);
+  }
+  .audio-btn:active{ transform: translateY(3px); box-shadow:0 1px 0 var(--blue-dark); }
+  .word-basque{ font-family:'Baloo 2'; font-weight:700; font-size: 28px; color:#3C3C3C; }
+  .options{ display:flex; flex-direction:column; gap:12px; }
+  .opt-btn{
+    background:#fff; border:2px solid var(--line); border-bottom-width:4px;
+    border-radius:14px; padding:16px 18px; font-size:17px; font-weight:700;
+    text-align:left; color:#4B4B4B; transition: background .1s;
+  }
+  .opt-btn:hover{ background:#F7FBFF; border-color:#84D8FF; }
+  .opt-btn.selected{ border-color: var(--blue); background:#DDF4FF; color: var(--blue-dark); }
+  .opt-btn.correct{ border-color: var(--green); background:#D7FFB8; color: var(--green-deep); }
+  .opt-btn.wrong{ border-color: var(--red); background:#FFDFE0; color: var(--red-dark); }
+
+  .listen-hero{ text-align:center; padding: 30px 0 10px; }
+  .listen-hero .audio-btn{ width:88px; height:88px; font-size:36px; margin:0 auto; }
+
+  /* ---------- BOTTOM BAR ---------- */
+  .bottom-bar{
+    position: fixed; bottom:0; left:0; right:0; z-index: 30;
+    background:#fff; border-top:2px solid var(--line); padding: 16px 20px 22px;
+  }
+  .bottom-inner{ max-width: 640px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .feedback-text{ font-weight:800; font-size:16px; }
+  .feedback-text.correct{ color: var(--green-deep); }
+  .feedback-text.wrong{ color: var(--red-dark); }
+  .feedback-sub{ font-size:13px; color:#7a7a7a; font-weight:700; margin-top:2px; }
+  .btn{
+    border:none; border-radius:14px; padding:14px 30px; font-weight:800; font-size:16px;
+    color:#fff; box-shadow: 0 4px 0 rgba(0,0,0,.15); letter-spacing:.02em; text-transform:uppercase;
+  }
+  .btn:active{ transform: translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.15); }
+  .btn.primary{ background: var(--green); box-shadow: 0 4px 0 var(--green-deep); }
+  .btn.primary:disabled{ background:#E5E5E5; box-shadow:0 4px 0 #CFCFCF; color:#AFAFAF; cursor:default; }
+  .btn.retry{ background: var(--red); box-shadow: 0 4px 0 var(--red-dark); }
+  .bottom-bar.state-correct{ background:#D7FFB8; border-top-color:#B2E876; }
+  .bottom-bar.state-wrong{ background:#FFDFE0; border-top-color:#FFC0C4; }
+
+  /* ---------- SUMMARY ---------- */
+  .summary-wrap{ max-width: 480px; margin:0 auto; padding: 60px 24px; text-align:center; }
+  .summary-emoji{ font-size:70px; }
+  .summary-wrap h1{ font-size:28px; margin: 10px 0 30px; }
+  .summary-stats{ display:flex; gap:14px; justify-content:center; margin-bottom: 40px; }
+  .summary-stat{
+    flex:1; background:#fff; border:2px solid var(--line); border-radius:14px; padding: 18px 10px;
+  }
+  .summary-stat .num{ font-family:'Baloo 2'; font-weight:800; font-size:24px; }
+  .summary-stat .lbl{ font-size:12px; color:#8a8a8a; font-weight:700; text-transform:uppercase; }
+
+  /* ---------- CHEST MODAL ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(0,0,0,.45); z-index:50;
+    display:none; align-items:center; justify-content:center; padding: 20px;
+  }
+  .modal-overlay.active{ display:flex; }
+  .chest-modal{
+    background:#fff; border-radius:22px; padding: 40px 30px; text-align:center; max-width:340px; width:100%;
+  }
+  .chest-icon{ font-size: 80px; display:inline-block; }
+  .chest-icon.open{ animation: pop .5s ease; }
+  @keyframes pop{ 0%{transform:scale(.4) rotate(-8deg); opacity:0;} 60%{transform:scale(1.15) rotate(4deg);} 100%{transform:scale(1) rotate(0);} }
+  .chest-title{ font-family:'Baloo 2'; font-weight:800; font-size:22px; margin: 14px 0 4px; }
+  .chest-sub{ color:#8a8a8a; font-weight:700; font-size:14px; margin-bottom: 22px; }
+  .reward-row{ display:flex; gap:14px; justify-content:center; margin-bottom: 26px; }
+  .reward-pill{
+    background: var(--bg-soft); border-radius:12px; padding:12px 18px; font-weight:800; font-size:17px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .locked-msg{ color:#AFAFAF; font-weight:700; }
+
+  /* ---------- LEVEL SELECT ---------- */
+  .level-row{
+    display:flex; align-items:center; gap:14px; width:100%;
+    background: var(--bg-soft); border:2px solid var(--line); border-radius:14px;
+    padding: 14px 16px; text-align:left;
+  }
+  .level-row.level-open{ border-color: var(--green); background:#F2FFE8; }
+  .level-row.level-done{ border-color: var(--gold); background:#FFF8E0; }
+  .level-row.level-locked{ opacity:.55; }
+  .level-icon{ font-size:22px; width:28px; text-align:center; flex-shrink:0; }
+  .level-text{ display:flex; flex-direction:column; flex:1; }
+  .level-name{ font-family:'Baloo 2'; font-weight:700; font-size:15px; color:#3C3C3C; }
+  .level-desc{ font-size:12px; color:#8a8a8a; font-weight:700; }
+  .level-check{ color: var(--gold-dark); font-weight:800; font-size:16px; }
+
+  /* ---------- LOGIN ---------- */
+  .login-wrap{
+    max-width: 360px; margin: 0 auto; min-height: 100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 30px; text-align:center;
+  }
+  .login-badge{
+    width:76px; height:76px; border-radius:22px; background: var(--green);
+    display:flex; align-items:center; justify-content:center; font-size:38px;
+    margin-bottom: 16px; box-shadow: 0 6px 0 var(--green-deep);
+  }
+  .login-wrap h1{ font-size:26px; margin:0 0 6px; color: var(--green-deep); }
+  .login-sub{ color:#8a8a8a; font-weight:700; font-size:14px; margin: 0 0 26px; }
+  .avatar-picker-label{ font-weight:800; font-size:13px; color:#8a8a8a; text-transform:uppercase; letter-spacing:.03em; margin: 4px 0 10px; align-self:flex-start; }
+  .avatar-grid{
+    display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; width:100%; margin-bottom: 22px;
+  }
+  .avatar-option{
+    aspect-ratio: 1 / 1; border-radius:14px; border:2px solid var(--line); background:#fff;
+    font-size:24px; display:flex; align-items:center; justify-content:center;
+  }
+  .avatar-option.selected{ border-color: var(--green); background:#F2FFE8; box-shadow: 0 0 0 3px rgba(88,204,2,.2); }
+  #login-form{ width:100%; }
+  .login-input{
+    width:100%; padding:16px 16px; border-radius:14px; border:2px solid var(--line);
+    font-size:16px; font-weight:700; font-family:inherit; color:#3C3C3C;
+    outline:none;
+  }
+  .login-input:focus{ border-color: var(--blue); }
+  .login-msg{ margin-top:14px; font-weight:700; font-size:14px; color: var(--ink-soft); min-height: 20px; }
+  .login-msg.error{ color: var(--red-dark); }
+  .logout-btn{
+    background:none; border:none; font-size:20px; color:#AFAFAF; font-weight:800;
+    padding: 2px 4px; line-height:1;
+  }
+  .profile-btn{
+    background:none; border:none; font-size:20px; color: var(--blue); font-weight:800;
+    padding: 2px 4px; line-height:1;
+  }
+
+  /* ---------- PROFILE ---------- */
+  .profile-wrap{ max-width: 560px; margin:0 auto; padding: 10px 20px 60px; }
+  .profile-header{ display:flex; align-items:center; gap:16px; margin-top: 10px; }
+  .profile-avatar{
+    width:64px; height:64px; border-radius:50%; background: var(--green);
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+    box-shadow: 0 4px 0 var(--green-deep); flex-shrink:0;
+  }
+  .profile-name{ font-family:'Baloo 2'; font-weight:700; font-size:20px; color:#3C3C3C; }
+  .profile-handle{ color:#9a9a9a; font-weight:700; font-size:13px; margin-top:2px; }
+
+  .goal-card, .friends-card{
+    background:#fff; border:2px solid var(--line); border-radius:16px; padding: 18px 20px; margin-bottom: 20px;
+  }
+  .hearts-card{
+    background:#fff; border:2px solid var(--line); border-radius:16px; padding: 16px 20px; margin-bottom: 20px;
+  }
+  .hearts-row{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+  .hearts-current{ font-family:'Baloo 2'; font-weight:700; font-size:18px; color: var(--red); }
+  .hearts-countdown-inline{ font-size:12px; font-weight:700; color:#8a8a8a; }
+
+  .plans-card{
+    background:#fff; border:2px solid var(--line); border-radius:16px; padding: 18px 20px; margin-bottom: 20px;
+  }
+  .plans-list{ display:flex; flex-direction:column; gap:12px; margin-top: 14px; }
+  .plan-card{
+    border-radius:14px; padding: 16px 18px; border:2px solid var(--line); position:relative;
+  }
+  .plan-card.plan-current{ border-color: var(--green); background:#F2FFE8; }
+  .plan-card.plan-super{ border-color: var(--gold); background: linear-gradient(135deg, #FFFBEF, #FFF3CC); }
+  .plan-card.plan-max{ border-color: var(--purple); background: linear-gradient(135deg, #FBF1FF, #F1DBFF); }
+  .plan-name{ font-family:'Baloo 2'; font-weight:800; font-size:16px; color:#3C3C3C; display:flex; align-items:center; gap:8px; }
+  .plan-badge{
+    font-size:10px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+    background: var(--green); color:#fff; padding: 3px 8px; border-radius:8px;
+  }
+  .plan-feats{ margin: 8px 0 12px; padding-left: 18px; color:#5a5a5a; font-size:13px; font-weight:600; line-height:1.6; }
+  .plan-btn{ width:100%; }
+  .goal-title{ font-family:'Baloo 2'; font-weight:700; font-size:16px; color:#3C3C3C; }
+  .goal-sub{ font-weight:800; font-size:13px; color:#8a8a8a; }
+  .goal-msg{ margin-top:10px; font-weight:700; font-size:14px; color: var(--green-deep); }
+
+  .challenges-list{ display:flex; flex-direction:column; gap:14px; margin-top: 4px; }
+  .challenge-row{ display:flex; flex-direction:column; gap:6px; }
+  .challenge-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .challenge-label{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; color:#3C3C3C; }
+  .challenge-reward{ font-size:12px; font-weight:800; color: var(--blue-dark); white-space:nowrap; }
+  .challenge-track{ height:10px; background: var(--line); border-radius:8px; overflow:hidden; }
+  .challenge-fill{ height:100%; background: var(--blue); border-radius:8px; transition: width .3s ease; }
+  .challenge-fill.done{ background: var(--gold); }
+  .challenge-bottom{ display:flex; justify-content:space-between; align-items:center; }
+  .challenge-count{ font-size:12px; color:#8a8a8a; font-weight:700; }
+  .challenge-claim{
+    border:none; border-radius:10px; padding:6px 16px; font-weight:800; font-size:12px;
+    text-transform:uppercase; color:#fff; background: var(--green); box-shadow: 0 3px 0 var(--green-deep);
+  }
+  .challenge-claim:disabled{ background:#E5E5E5; box-shadow:0 3px 0 #CFCFCF; color:#AFAFAF; }
+  .challenge-claim.claimed{ background: var(--gold); box-shadow: 0 3px 0 var(--gold-dark); color:#fff; }
+
+  .league-header{ display:flex; align-items:center; gap:14px; }
+  .league-icon{
+    width:54px; height:54px; border-radius:50%; background: var(--bg-soft);
+    display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;
+  }
+  .league-name{ font-family:'Baloo 2'; font-weight:700; font-size:17px; color:#3C3C3C; }
+  .league-xp{ font-size:12px; color:#8a8a8a; font-weight:700; }
+  .rank-row{ display:flex; align-items:center; gap:12px; padding:10px 14px; background: var(--bg-soft); border-radius:12px; }
+  .rank-row.me{ background:#EAF6FF; border:2px solid var(--blue); }
+  .rank-pos{ font-family:'Baloo 2'; font-weight:800; font-size:15px; color:#8a8a8a; width:22px; text-align:center; flex-shrink:0; }
+  .rank-xp{ font-weight:800; font-size:13px; color: var(--blue-dark); white-space:nowrap; }
+
+  .friends-hint{ color:#8a8a8a; font-size:13px; font-weight:600; line-height:1.4; margin: 6px 0 14px; }
+  .friend-msg{ font-weight:700; font-size:13px; color: var(--ink-soft); min-height:18px; margin-top:8px; }
+  .friend-msg.error{ color: var(--red-dark); }
+  .friends-list{ display:flex; flex-direction:column; gap:10px; margin-top: 12px; }
+  .friend-row{
+    display:flex; align-items:center; gap:12px; padding: 12px 14px;
+    background: var(--bg-soft); border-radius:12px;
+  }
+  .friend-avatar{
+    width:40px; height:40px; border-radius:50%; background: var(--blue);
+    display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; flex-shrink:0;
+  }
+  .friend-info{ flex:1; min-width:0; }
+  .friend-info .fname{ font-weight:800; font-size:14px; color:#3C3C3C; }
+  .friend-info .fstage{ font-size:12px; color:#8a8a8a; font-weight:700; }
+  .friend-remove{
+    background:none; border:none; color:#C7C7C7; font-size:18px; font-weight:800; padding:4px 6px;
+  }
+  .friends-empty{ color:#AFAFAF; font-weight:700; font-size:14px; text-align:center; padding: 10px 0; }
+
+  .achievements-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top: 10px; }
+  .badge{
+    aspect-ratio:1/1; border-radius:14px; background: var(--bg-soft); border:2px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px;
+    text-align:center;
+  }
+  .badge.earned{ background:#FFF8E0; border-color: var(--gold); }
+  .badge-icon{ font-size:22px; filter: grayscale(1); opacity:.4; }
+  .badge.earned .badge-icon{ filter:none; opacity:1; }
+  .badge-title{ font-size:10px; font-weight:800; color:#8a8a8a; line-height:1.2; }
+  .badge.earned .badge-title{ color:#3C3C3C; }
+
+  .mini-badges{ display:flex; gap:4px; margin-top:2px; }
+  .mini-badges span{ font-size:13px; }
+  .kudos-btn{
+    background:none; border:none; font-size:20px; padding:4px 6px; flex-shrink:0;
+  }
+  .kudos-btn:disabled{ opacity:.35; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= OFFLINE OVERLAY ================= -->
+<div class="modal-overlay" id="offline-overlay">
+  <div class="chest-modal">
+    <div class="chest-icon">📶</div>
+    <div class="chest-title">Wifi konexioa behar da</div>
+    <div class="chest-sub">Euskaldun-ek internet konexioa behar du profilak eta lagunak gordetzeko. Konektatu eta saiatu berriro.</div>
+    <button class="btn primary" style="width:100%;" onclick="checkConnection()">Berriro saiatu</button>
+  </div>
+</div>
+
+<!-- ================= LOGIN ================= -->
+<div id="screen-login" class="screen active">
+  <div class="login-wrap">
+    <div class="login-badge" id="login-avatar-preview">🦉</div>
+    <h1>Euskaldun</h1>
+    <p class="login-sub">Idatzi zure izena eta aukeratu zure irudia</p>
+
+    <div class="avatar-picker-label">Zure irudia</div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+
+    <form id="login-form" autocomplete="off">
+      <input type="text" id="login-input" class="login-input" placeholder="Zure izena" maxlength="24" required />
+      <button type="submit" class="btn primary" style="width:100%; margin-top:14px;">Sartu</button>
+    </form>
+    <div class="login-msg" id="login-msg"></div>
+  </div>
+</div>
+
+<!-- ================= HOME / PATH ================= -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="brand"><div class="brand-badge">🦉</div>Euskaldun</div>
+    <div class="stats">
+      <div class="stat streak">🔥 <span id="streak-count">4</span></div>
+      <div class="stat gems">💎 <span id="gems-count">30</span></div>
+      <div class="stat hearts">❤️ <span id="hearts-count">5</span></div>
+      <button class="profile-btn" onclick="openProfile()" title="Profila">👤</button>
+      <button class="logout-btn" onclick="logout()" title="Amaitu saioa">⎋</button>
+    </div>
+  </div>
+
+  <div class="path-wrap">
+    <div class="path-header">
+      <div class="kicker">1. Maila · <span id="home-username">Erabiltzailea</span></div>
+      <h1>Hasi euskeraz ikasten</h1>
+    </div>
+    <div class="path" id="path-container"></div>
+  </div>
+</div>
+
+<!-- ================= PROFILE ================= -->
+<div id="screen-profile" class="screen">
+  <div class="lesson-top">
+    <button class="close-btn" onclick="closeProfile()">✕</button>
+    <div style="font-family:'Baloo 2'; font-weight:700; font-size:18px; color:#3C3C3C;">Nire profila</div>
+  </div>
+
+  <div class="profile-wrap">
+    <div class="profile-header">
+      <div class="profile-avatar" id="profile-avatar">🦉</div>
+      <div>
+        <div class="profile-name" id="profile-name">Erabiltzailea</div>
+        <div class="profile-handle" id="profile-handle">@erabiltzailea</div>
+      </div>
+    </div>
+
+    <div class="summary-stats" style="margin: 22px 0;">
+      <div class="summary-stat"><div class="num" id="profile-streak">0</div><div class="lbl">🔥 Jarraipena</div></div>
+      <div class="summary-stat"><div class="num" id="profile-gems">0</div><div class="lbl">💎 Gemak</div></div>
+      <div class="summary-stat"><div class="num" id="profile-completed">0/24</div><div class="lbl">⭐ Ikasgaiak</div></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-title">Gaurko helburua</div>
+      <div class="progress-track" style="height:14px; margin: 10px 0;">
+        <div class="progress-fill" id="goal-progress-fill" style="width:0%; background: var(--gold);"></div>
+      </div>
+      <div class="goal-sub" id="goal-sub">0 / 20 XP gaur</div>
+      <div class="goal-msg" id="goal-msg"></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-title">Sailkapena</div>
+      <div class="league-header">
+        <div class="league-icon" id="league-icon">🥉</div>
+        <div>
+          <div class="league-name" id="league-name">Brontzezko Liga</div>
+          <div class="league-xp" id="league-xp-sub">0 XP guztira</div>
+        </div>
+      </div>
+      <div class="progress-track" style="height:14px; margin: 12px 0 6px;">
+        <div class="progress-fill" id="league-progress-fill" style="width:0%; background: var(--purple);"></div>
+      </div>
+      <div class="goal-sub" id="league-next-sub"></div>
+      <div id="league-rank-list" class="friends-list" style="margin-top:16px;"></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-title">Nire lorpenak</div>
+      <p class="friends-hint">Lortu dituzun bereizgarriak. Zure lagunek ere ikusi ahal dituzte.</p>
+      <div id="achievements-grid" class="achievements-grid"></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-title" style="display:flex; justify-content:space-between; align-items:center;">
+        Jasotako animoak
+        <button class="friend-remove" style="font-size:12px; color:#AFAFAF;" onclick="clearKudos()">Garbitu</button>
+      </div>
+      <p class="friends-hint">Zure lagunek bidalitako txaloak.</p>
+      <div id="kudos-list" class="friends-list"></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-title">Asteko desafioak</div>
+      <p class="friends-hint">Astero berritzen dira. Osatu eta jaso gemak.</p>
+      <div id="challenges-list" class="challenges-list"></div>
+    </div>
+
+    <div class="hearts-card">
+      <div class="goal-title">Bihotzak</div>
+      <div class="hearts-row">
+        <div class="hearts-current" id="hearts-current-display">❤️ 5 / 5</div>
+        <div class="hearts-countdown-inline" id="hearts-countdown-inline"></div>
+      </div>
+    </div>
+
+    <div class="plans-card">
+      <div class="goal-title">Harpidetza</div>
+      <p class="friends-hint">Bihotz mugagabeak eta gehiago, doan.</p>
+      <div id="plans-list" class="plans-list"></div>
+    </div>
+
+    <div class="friends-card">
+      <div class="goal-title">Lagunak</div>
+      <p class="friends-hint">Gehitu lagunak beraien profil-izena idatzita. Zure izena eta aurrerapena ikusgai egongo dira zuk gehitzen dituzun lagunentzat.</p>
+      <form id="add-friend-form" autocomplete="off">
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="friend-input" class="login-input" placeholder="Laguna profil-izena" maxlength="24" />
+          <button type="submit" class="btn primary" style="padding:14px 20px;">+</button>
+        </div>
+      </form>
+      <div class="friend-msg" id="friend-msg"></div>
+      <div id="friends-list" class="friends-list"></div>
+    </div>
+
+    <div class="friends-card">
+      <div class="goal-title">Erabiltzaile guztiak</div>
+      <p class="friends-hint">Euskaldun-en izena eman duten erabiltzaile guztiak. Sakatu + gehitzeko.</p>
+      <div id="directory-list" class="friends-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LESSON ================= -->
+<div id="screen-lesson" class="screen">
+  <div class="lesson-top">
+    <button class="close-btn" onclick="exitLesson()">✕</button>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="hearts-mini">❤️ <span id="lesson-hearts">5</span></div>
+  </div>
+
+  <div class="exercise-wrap" id="exercise-wrap"></div>
+
+  <div class="bottom-bar" id="bottom-bar" style="display:none;">
+    <div class="bottom-inner">
+      <div>
+        <div class="feedback-text" id="feedback-text"></div>
+        <div class="feedback-sub" id="feedback-sub"></div>
+      </div>
+      <button class="btn primary" id="continue-btn" onclick="nextExercise()">Egiaztatu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SUMMARY ================= -->
+<div id="screen-summary" class="screen">
+  <div class="summary-wrap">
+    <div class="summary-emoji">🎉</div>
+    <h1>Ikasgaia amaituta!</h1>
+    <div class="summary-stats">
+      <div class="summary-stat"><div class="num" id="summary-xp">0 XP</div><div class="lbl">Guztira</div></div>
+      <div class="summary-stat"><div class="num" id="summary-acc">0%</div><div class="lbl">Zehaztasuna</div></div>
+    </div>
+    <div class="summary-level" id="summary-level" style="margin-bottom:26px; font-weight:800; color:var(--blue-dark);"></div>
+    <button class="btn primary" style="width:100%;" onclick="backToPath()">Jarraitu</button>
+  </div>
+</div>
+
+<!-- ================= HEARTS FAIL ================= -->
+<div id="screen-hearts-fail" class="screen">
+  <div class="summary-wrap">
+    <div class="summary-emoji">💔</div>
+    <h1>Bihotzik gabe gelditu zara</h1>
+    <p style="color:#8a8a8a; font-weight:700; margin: -14px 0 30px;">Itxaron bihotzak berreskuratu arte edo lortu Super Euskaldun bihotz mugagabeak izateko.</p>
+    <button class="btn primary" style="width:100%; margin-bottom:12px;" onclick="openHeartsModal(0); showScreen('screen-home'); buildPath();">Ikusi aukerak</button>
+    <button class="btn retry" style="width:100%;" onclick="backToPath()">Bideara itzuli</button>
+  </div>
+</div>
+
+<!-- ================= CHEST MODAL ================= -->
+<div class="modal-overlay" id="chest-overlay">
+  <div class="chest-modal">
+    <div class="chest-icon" id="chest-icon-el">📦</div>
+    <div class="chest-title" id="chest-title">Kutxa itxita dago</div>
+    <div class="chest-sub" id="chest-sub">Aurreko ikasgaia amaitu behar duzu</div>
+    <div class="reward-row" id="reward-row" style="display:none;">
+      <div class="reward-pill">💎 <span id="reward-gems">0</span></div>
+      <div class="reward-pill">⭐ <span id="reward-xp">0</span></div>
+    </div>
+    <button class="btn primary" style="width:100%;" onclick="closeChest()">Ados</button>
+  </div>
+</div>
+
+<!-- ================= LEVEL SELECT MODAL ================= -->
+<div class="modal-overlay" id="level-overlay">
+  <div class="chest-modal" style="text-align:left;">
+    <div style="text-align:center;">
+      <div class="chest-title" id="level-lesson-title" style="margin-bottom:4px;">Ikasgaia</div>
+      <div class="chest-sub" style="margin-bottom:20px;">Aukeratu maila</div>
+    </div>
+    <div id="level-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <button class="btn retry" style="width:100%; margin-top:18px;" onclick="closeLevelSelect()">Itxi</button>
+  </div>
+</div>
+
+<!-- ================= HEARTS MODAL ================= -->
+<div class="modal-overlay" id="hearts-overlay">
+  <div class="chest-modal">
+    <div class="chest-icon">💔</div>
+    <div class="chest-title">Bihotzak agortuta</div>
+    <div class="chest-sub" id="hearts-required-msg">Ez duzu bihotzik gelditzen.</div>
+    <div class="goal-sub" id="hearts-countdown" style="margin: 4px 0 18px;"></div>
+    <button class="btn primary" style="width:100%; margin-bottom:10px;" onclick="upgradeFromHeartsModal('super')">Lortu Super Euskaldun doan 💛</button>
+    <button class="btn retry" style="width:100%;" onclick="closeHeartsModal()">Itxaron</button>
+  </div>
+</div>
+
+<script>
+/* ============ CONNECTIVITY ============ */
+function checkConnection(){
+  const overlay = document.getElementById('offline-overlay');
+  const online = (typeof navigator === 'undefined') ? true : navigator.onLine;
+  overlay.classList.toggle('active', !online);
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', checkConnection);
+  window.addEventListener('offline', checkConnection);
+}
+checkConnection();
+
+/* ============ DATA ============ */
+// Each lesson: id, title, icon, list of exercises.
+// exercise types: 'translate' (basque word -> spanish meaning) or 'listen' (audio -> basque word)
+const lessons = [
+  {
+    title: "Agurrak", icon: "👋",
+    words: [
+      { eu: "Kaixo", es: "Hola" },
+      { eu: "Agur", es: "Adiós" },
+      { eu: "Egun on", es: "Buenos días" },
+      { eu: "Arratsalde on", es: "Buenas tardes" },
+      { eu: "Eskerrik asko", es: "Gracias" },
+      { eu: "Gabon", es: "Buenas noches" },
+      { eu: "Ikusi arte", es: "Hasta la vista" },
+    ]
+  },
+  {
+    title: "Zenbakiak", icon: "🔢",
+    words: [
+      { eu: "Bat", es: "Uno" },
+      { eu: "Bi", es: "Dos" },
+      { eu: "Hiru", es: "Tres" },
+      { eu: "Lau", es: "Cuatro" },
+      { eu: "Bost", es: "Cinco" },
+      { eu: "Sei", es: "Seis" },
+      { eu: "Zazpi", es: "Siete" },
+    ]
+  },
+  {
+    title: "Familia", icon: "👪",
+    words: [
+      { eu: "Ama", es: "Madre" },
+      { eu: "Aita", es: "Padre" },
+      { eu: "Anaia", es: "Hermano" },
+      { eu: "Alaba", es: "Hija" },
+      { eu: "Semea", es: "Hijo" },
+      { eu: "Amona", es: "Abuela" },
+      { eu: "Aitona", es: "Abuelo" },
+    ]
+  },
+  {
+    title: "Janaria", icon: "🍞",
+    words: [
+      { eu: "Ogia", es: "Pan" },
+      { eu: "Ura", es: "Agua" },
+      { eu: "Esnea", es: "Leche" },
+      { eu: "Sagarra", es: "Manzana" },
+      { eu: "Arraina", es: "Pescado" },
+      { eu: "Haragia", es: "Carne" },
+      { eu: "Gazta", es: "Queso" },
+    ]
+  },
+  {
+    title: "Animaliak", icon: "🐾",
+    words: [
+      { eu: "Txakurra", es: "Perro" },
+      { eu: "Katua", es: "Gato" },
+      { eu: "Zaldia", es: "Caballo" },
+      { eu: "Txoria", es: "Pájaro" },
+      { eu: "Hartza", es: "Oso" },
+      { eu: "Elefantea", es: "Elefante" },
+      { eu: "Lehoia", es: "León" },
+    ]
+  },
+  {
+    title: "Koloreak", icon: "🎨",
+    words: [
+      { eu: "Gorria", es: "Rojo" },
+      { eu: "Urdina", es: "Azul" },
+      { eu: "Berdea", es: "Verde" },
+      { eu: "Horia", es: "Amarillo" },
+      { eu: "Zuria", es: "Blanco" },
+      { eu: "Beltza", es: "Negro" },
+      { eu: "Arrosa", es: "Rosa" },
+    ]
+  },
+  {
+    title: "Egunak", icon: "📅",
+    words: [
+      { eu: "Astelehena", es: "Lunes" },
+      { eu: "Asteartea", es: "Martes" },
+      { eu: "Asteazkena", es: "Miércoles" },
+      { eu: "Osteguna", es: "Jueves" },
+      { eu: "Ostirala", es: "Viernes" },
+      { eu: "Larunbata", es: "Sábado" },
+      { eu: "Igandea", es: "Domingo" },
+    ]
+  },
+  {
+    title: "Eguraldia", icon: "⛅",
+    words: [
+      { eu: "Eguzkia", es: "Sol" },
+      { eu: "Euria", es: "Lluvia" },
+      { eu: "Elurra", es: "Nieve" },
+      { eu: "Haizea", es: "Viento" },
+      { eu: "Hodeia", es: "Nube" },
+      { eu: "Ekaitza", es: "Tormenta" },
+      { eu: "Beroa", es: "Calor" },
+    ]
+  },
+  {
+    title: "Gorputza", icon: "🧍",
+    words: [
+      { eu: "Burua", es: "Cabeza" },
+      { eu: "Eskua", es: "Mano" },
+      { eu: "Oina", es: "Pie" },
+      { eu: "Begia", es: "Ojo" },
+      { eu: "Bihotza", es: "Corazón" },
+      { eu: "Sudurra", es: "Nariz" },
+      { eu: "Ahoa", es: "Boca" },
+    ]
+  },
+  {
+    title: "Etxea", icon: "🏠",
+    words: [
+      { eu: "Etxea", es: "Casa" },
+      { eu: "Atea", es: "Puerta" },
+      { eu: "Leihoa", es: "Ventana" },
+      { eu: "Mahaia", es: "Mesa" },
+      { eu: "Aulkia", es: "Silla" },
+      { eu: "Ohea", es: "Cama" },
+      { eu: "Sukaldea", es: "Cocina" },
+    ]
+  },
+  {
+    title: "Aditzak", icon: "🏃",
+    words: [
+      { eu: "Jan", es: "Comer" },
+      { eu: "Edan", es: "Beber" },
+      { eu: "Ikusi", es: "Ver" },
+      { eu: "Joan", es: "Ir" },
+      { eu: "Etorri", es: "Venir" },
+      { eu: "Egin", es: "Hacer" },
+      { eu: "Lo egin", es: "Dormir" },
+    ]
+  },
+  {
+    title: "Hiria", icon: "🏙️",
+    words: [
+      { eu: "Kalea", es: "Calle" },
+      { eu: "Denda", es: "Tienda" },
+      { eu: "Eskola", es: "Escuela" },
+      { eu: "Ospitalea", es: "Hospital" },
+      { eu: "Parkea", es: "Parque" },
+      { eu: "Liburutegia", es: "Biblioteca" },
+      { eu: "Geltokia", es: "Estación" },
+    ]
+  },
+  {
+    title: "Arropa", icon: "👕",
+    words: [
+      { eu: "Alkandora", es: "Camisa" },
+      { eu: "Galtzak", es: "Pantalones" },
+      { eu: "Jaka", es: "Chaqueta" },
+      { eu: "Oinetakoak", es: "Zapatos" },
+      { eu: "Txapela", es: "Gorra" },
+      { eu: "Gona", es: "Falda" },
+      { eu: "Jertsea", es: "Jersey" },
+    ]
+  },
+  {
+    title: "Lanbideak", icon: "👩‍⚕️",
+    words: [
+      { eu: "Irakaslea", es: "Profesor/a" },
+      { eu: "Medikua", es: "Médico" },
+      { eu: "Sukaldaria", es: "Cocinero" },
+      { eu: "Poliziak", es: "Policía" },
+      { eu: "Idazlea", es: "Escritor" },
+      { eu: "Abokatua", es: "Abogado" },
+      { eu: "Ingeniaria", es: "Ingeniero" },
+    ]
+  },
+  {
+    title: "Garraioa", icon: "🚌",
+    words: [
+      { eu: "Autoa", es: "Coche" },
+      { eu: "Autobusa", es: "Autobús" },
+      { eu: "Trena", es: "Tren" },
+      { eu: "Hegazkina", es: "Avión" },
+      { eu: "Bizikleta", es: "Bicicleta" },
+      { eu: "Itsasontzia", es: "Barco" },
+      { eu: "Metroa", es: "Metro" },
+    ]
+  },
+  {
+    title: "Kirolak", icon: "⚽",
+    words: [
+      { eu: "Futbola", es: "Fútbol" },
+      { eu: "Saskibaloia", es: "Baloncesto" },
+      { eu: "Igeriketa", es: "Natación" },
+      { eu: "Txirrindularitza", es: "Ciclismo" },
+      { eu: "Golfa", es: "Golf" },
+      { eu: "Tenisa", es: "Tenis" },
+      { eu: "Boxeoa", es: "Boxeo" },
+    ]
+  },
+  {
+    title: "Natura", icon: "🌲",
+    words: [
+      { eu: "Mendia", es: "Montaña" },
+      { eu: "Itsasoa", es: "Mar" },
+      { eu: "Ibaia", es: "Río" },
+      { eu: "Basoa", es: "Bosque" },
+      { eu: "Zuhaitza", es: "Árbol" },
+      { eu: "Lorea", es: "Flor" },
+      { eu: "Harria", es: "Piedra" },
+    ]
+  },
+  {
+    title: "Adjektiboak", icon: "✨",
+    words: [
+      { eu: "Handia", es: "Grande" },
+      { eu: "Txikia", es: "Pequeño" },
+      { eu: "Berria", es: "Nuevo" },
+      { eu: "Zaharra", es: "Viejo" },
+      { eu: "Polita", es: "Bonito" },
+      { eu: "Azkarra", es: "Rápido / Listo" },
+      { eu: "Motela", es: "Lento" },
+    ]
+  },
+  {
+    title: "Eguneko orduak", icon: "🕐",
+    words: [
+      { eu: "Goiza", es: "Mañana" },
+      { eu: "Eguerdia", es: "Mediodía" },
+      { eu: "Arratsaldea", es: "Tarde" },
+      { eu: "Gaua", es: "Noche" },
+      { eu: "Astea", es: "Semana" },
+      { eu: "Hilabetea", es: "Mes" },
+      { eu: "Urtea", es: "Año" },
+    ]
+  },
+  {
+    title: "Sentimenduak", icon: "😊",
+    words: [
+      { eu: "Poza", es: "Alegría" },
+      { eu: "Tristura", es: "Tristeza" },
+      { eu: "Beldurra", es: "Miedo" },
+      { eu: "Amorrua", es: "Enfado" },
+      { eu: "Maitasuna", es: "Amor" },
+      { eu: "Harridura", es: "Sorpresa" },
+      { eu: "Lotsa", es: "Vergüenza" },
+    ]
+  },
+  {
+    title: "Musika", icon: "🎸",
+    words: [
+      { eu: "Gitarra", es: "Guitarra" },
+      { eu: "Pianoa", es: "Piano" },
+      { eu: "Bateria", es: "Batería" },
+      { eu: "Abestia", es: "Canción" },
+      { eu: "Kontzertua", es: "Concierto" },
+      { eu: "Biolina", es: "Violín" },
+      { eu: "Musikaria", es: "Músico" },
+    ]
+  },
+  {
+    title: "Teknologia", icon: "📱",
+    words: [
+      { eu: "Telefonoa", es: "Teléfono" },
+      { eu: "Ordenagailua", es: "Ordenador" },
+      { eu: "Internet", es: "Internet" },
+      { eu: "Argazkia", es: "Foto" },
+      { eu: "Bideoa", es: "Vídeo" },
+      { eu: "Aplikazioa", es: "Aplicación" },
+      { eu: "Sarea", es: "Red" },
+    ]
+  },
+  {
+    title: "Eskolako gauzak", icon: "📚",
+    words: [
+      { eu: "Liburua", es: "Libro" },
+      { eu: "Boligrafoa", es: "Bolígrafo" },
+      { eu: "Koadernoa", es: "Cuaderno" },
+      { eu: "Arkatza", es: "Lápiz" },
+      { eu: "Motxila", es: "Mochila" },
+      { eu: "Arbela", es: "Pizarra" },
+      { eu: "Erregela", es: "Regla" },
+    ]
+  },
+  {
+    title: "Aisialdia", icon: "🎨",
+    words: [
+      { eu: "Irakurketa", es: "Lectura" },
+      { eu: "Dantza", es: "Baile" },
+      { eu: "Margolaritza", es: "Pintura" },
+      { eu: "Bidaiak", es: "Viajes" },
+      { eu: "Jokoa", es: "Juego" },
+      { eu: "Zinema", es: "Cine" },
+      { eu: "Fotografia", es: "Fotografía" },
+    ]
+  },
+  {
+    title: "Esapideak (Aditua)", icon: "🗣️",
+    words: [
+      { eu: "Zer moduz?", es: "¿Qué tal?" },
+      { eu: "Ondo nago", es: "Estoy bien" },
+      { eu: "Barkatu", es: "Perdón" },
+      { eu: "Mesedez", es: "Por favor" },
+      { eu: "Ez dakit", es: "No sé" },
+      { eu: "Poztu naiz", es: "Me alegro" },
+      { eu: "Zorte on!", es: "¡Buena suerte!" },
+    ]
+  },
+  {
+    title: "Aditz laguntzaileak (Aditua)", icon: "🎓",
+    words: [
+      { eu: "Naiz", es: "Soy / Estoy" },
+      { eu: "Da", es: "Es / Está" },
+      { eu: "Dut", es: "Lo tengo" },
+      { eu: "Gara", es: "Somos / Estamos" },
+      { eu: "Dira", es: "Son / Están" },
+      { eu: "Duzu", es: "Tú lo tienes" },
+      { eu: "Zara", es: "Tú eres / estás" },
+    ]
+  },
+  {
+    title: "Esaldi erabilgarriak (Aditua)", icon: "💬",
+    words: [
+      { eu: "Nire izena Ane da", es: "Me llamo Ane" },
+      { eu: "Zenbat urte dituzu?", es: "¿Cuántos años tienes?" },
+      { eu: "Non bizi zara?", es: "¿Dónde vives?" },
+      { eu: "Gustatzen zait irakurtzea", es: "Me gusta leer" },
+      { eu: "Laster arte", es: "Hasta pronto" },
+      { eu: "Zer ordu da?", es: "¿Qué hora es?" },
+      { eu: "Ondo pasa!", es: "¡Que lo pases bien!" },
+    ]
+  },
+  {
+    title: "Hitz zailak (Aditua)", icon: "🏆",
+    words: [
+      { eu: "Suhiltzailea", es: "Bombero" },
+      { eu: "Ordenagailu eramangarria", es: "Portátil" },
+      { eu: "Aireportua", es: "Aeropuerto" },
+      { eu: "Eskumuturrekoa", es: "Pulsera" },
+      { eu: "Elkarrizketa", es: "Entrevista" },
+      { eu: "Iragarkia", es: "Anuncio" },
+      { eu: "Ingurumena", es: "Medio ambiente" },
+    ]
+  },
+
+];
+
+// A chest node appears on the path after these lesson indices (1-based count) are completed
+const chestAfter = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27];
+
+/* ============ STATE ============ */
+let currentUser = null; // slug of the logged-in username
+
+function freshState(){
+  return {
+    completedLessons: new Set(),
+    lessonLevels: {}, // { lessonIdx: highestLevelCompleted (0-3) }
+    openedChests: new Set(),
+    gems: 30,
+    streak: 4,
+    currentLessonIdx: null,
+    currentLevel: 1,
+    exercises: [],
+    exIdx: 0,
+    correctCount: 0,
+    answered: false,
+    hearts: 5,
+    displayName: '',
+    totalXp: 0,
+    xpToday: 0,
+    lastActiveDate: '',
+    friends: [], // array of friend slugs
+    hiddenIncoming: [], // reciprocal-only friends you've dismissed from your view
+    kudosSentToday: {}, // { friendSlug: 'yyyy-mm-dd' }
+    plan: 'free', // 'free' | 'super' | 'max'
+    globalHearts: 5, // shared life pool across the whole app (free plan only)
+    heartsRefillAt: null, // timestamp (ms) when the next heart regenerates, or null if full
+    avatar: '🦉',
+    challengeProgress: {}, // { metric: count } reset every week
+    challengesClaimed: [], // challenge ids claimed this week
+    challengeWeekStart: '',
+  };
+}
+let state = freshState();
+const AVATAR_OPTIONS = ['🦉', '🐺', '🦌', '🐻', '🦊', '🐸', '🦅', '🐑', '🐐', '🦔'];
+let selectedAvatar = AVATAR_OPTIONS[0];
+let avatarManuallyChanged = false;
+const DAILY_GOAL_XP = 20;
+const MAX_LEVEL = 3;
+const LEVEL_NAMES = { 1: 'Maila 1', 2: 'Maila 2', 3: 'Maila 3' };
+const LEVEL_HEARTS = { 1: 4, 2: 3, 3: 2 }; // minimum hearts required to start each level
+const LEVEL_ICONS = { 0: '', 1: '⭐', 2: '🌟', 3: '🏆' };
+const MAX_HEARTS = 5;
+const HEART_REFILL_MS = 4 * 60 * 60 * 1000; // 1 heart every 4 hours
+
+const CHALLENGES = [
+  { id: 'lessons3', metric: 'lessons', target: 3, reward: 30, title: 'Osatu 3 ikasgai', icon: '📘' },
+  { id: 'xp50', metric: 'xp', target: 50, reward: 40, title: 'Irabazi 50 XP', icon: '⚡' },
+  { id: 'perfect1', metric: 'perfect', target: 1, reward: 50, title: 'Ikasgai bat hutsik gabe', icon: '🎯' },
+  { id: 'chest1', metric: 'chests', target: 1, reward: 20, title: 'Ireki kutxa bat', icon: '📦' },
+  { id: 'friend1', metric: 'friends', target: 1, reward: 15, title: 'Gehitu laguna bat', icon: '🤝' },
+];
+
+function achievementSnapshot(){
+  return {
+    completed: state.completedLessons.size,
+    total: lessons.length,
+    streak: state.streak,
+    chests: state.openedChests.size,
+    mastered: Object.values(state.lessonLevels).filter(l => l >= MAX_LEVEL).length,
+    totalXp: state.totalXp,
+    friendsCount: state.friends.length,
+  };
+}
+
+const LEAGUES = [
+  { name: 'Brontzezko Liga', icon: '🥉', minXp: 0 },
+  { name: 'Zilarrezko Liga', icon: '🥈', minXp: 150 },
+  { name: 'Urrezko Liga', icon: '🥇', minXp: 400 },
+  { name: 'Zafiro Liga', icon: '🔷', minXp: 800 },
+  { name: 'Esmeralda Liga', icon: '💚', minXp: 1500 },
+  { name: 'Errubi Liga', icon: '❤️', minXp: 2500 },
+  { name: 'Ametista Liga', icon: '💜', minXp: 4000 },
+  { name: 'Diamantezko Liga', icon: '💎', minXp: 6000 },
+];
+
+function getLeague(xp){
+  let idx = 0;
+  for (let i = 0; i < LEAGUES.length; i++) {
+    if (xp >= LEAGUES[i].minXp) idx = i;
+  }
+  const current = LEAGUES[idx];
+  const next = LEAGUES[idx + 1] || null;
+  return { idx, current, next };
+}
+
+function isPremium(){ return state.plan === 'super' || state.plan === 'max'; }
+function xpMultiplier(){ return state.plan === 'max' ? 2 : 1; }
+
+/* ============ ACHIEVEMENTS (LOGROAK) ============ */
+const ACHIEVEMENTS = [
+  { id: 'streak7', icon: '🔥', title: '7 eguneko jarraipena', check: s => s.streak >= 7 },
+  { id: 'lessons10', icon: '📘', title: '10 ikasgai osatu', check: s => s.completed >= 10 },
+  { id: 'allLessons', icon: '🏅', title: 'Ikasgai guztiak osatu', check: s => s.total > 0 && s.completed >= s.total },
+  { id: 'chests5', icon: '📦', title: '5 kutxa ireki', check: s => s.chests >= 5 },
+  { id: 'mastered1', icon: '🏆', title: 'Ikasgai bat maisu', check: s => s.mastered >= 1 },
+  { id: 'xp500', icon: '⚡', title: '500 XP guztira', check: s => s.totalXp >= 500 },
+  { id: 'friends3', icon: '🤝', title: '3 lagun izan', check: s => (s.friendsCount || 0) >= 3 },
+];
+
+function computeAchievements(stats){
+  return ACHIEVEMENTS.map(a => ({ ...a, earned: !!a.check(stats) }));
+}
+
+/* ============ KUDOS (PREMIOAK) ============ */
+const KUDOS_MESSAGES = [
+  { id: 'nice', text: 'Primeran zoaz! 🎉' },
+  { id: 'keep', text: 'Segi horrela! 💪' },
+  { id: 'congrats', text: 'Zorionak zure aurrerapenagatik! 🏅' },
+];
+
+async function sendKudos(toSlug, messageId){
+  if (!hasStorage || !currentUser || toSlug === currentUser) return false;
+  const msg = KUDOS_MESSAGES.find(m => m.id === messageId) || KUDOS_MESSAGES[0];
+  try {
+    let inbox = [];
+    try {
+      const result = await withTimeout(window.storage.get('kudos:' + toSlug, true), 4000);
+      if (result && result.value) inbox = JSON.parse(result.value);
+    } catch (e) { inbox = []; }
+    if (!Array.isArray(inbox)) inbox = [];
+    inbox.unshift({ from: currentUser, fromName: state.displayName, avatar: state.avatar, text: msg.text, ts: Date.now() });
+    inbox = inbox.slice(0, 20); // keep it bounded
+    await withTimeout(window.storage.set('kudos:' + toSlug, JSON.stringify(inbox), true), 4000);
+    return true;
+  } catch (e) {
+    console.error('Ezin izan da kudoa bidali:', e);
+    return false;
+  }
+}
+
+async function loadKudos(){
+  if (!hasStorage || !currentUser) return [];
+  try {
+    const result = await withTimeout(window.storage.get('kudos:' + currentUser, true), 4000);
+    if (result && result.value) {
+      const arr = JSON.parse(result.value);
+      return Array.isArray(arr) ? arr : [];
+    }
+  } catch (e) { /* none yet or unavailable */ }
+  return [];
+}
+
+async function clearKudos(){
+  if (!hasStorage || !currentUser) return;
+  try {
+    await withTimeout(window.storage.set('kudos:' + currentUser, JSON.stringify([]), true), 4000);
+  } catch (e) { /* ignore */ }
+  renderKudos();
+}
+
+function timeAgo(ts){
+  const diffMin = Math.floor((Date.now() - ts) / 60000);
+  if (diffMin < 1) return 'orain';
+  if (diffMin < 60) return diffMin + ' min';
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return diffH + ' h';
+  return Math.floor(diffH / 24) + ' egun';
+}
+
+function todayStr(){
+  return new Date().toISOString().slice(0, 10);
+}
+
+function weekStartStr(){
+  const d = new Date();
+  const day = d.getUTCDay() || 7; // Monday=1 ... Sunday=7
+  if (day !== 1) d.setUTCDate(d.getUTCDate() - (day - 1));
+  return d.toISOString().slice(0, 10);
+}
+
+function bumpChallenge(metric, amount){
+  state.challengeProgress[metric] = (state.challengeProgress[metric] || 0) + amount;
+}
+
+/* ============ HEARTS (LIVES) ============ */
+function regenHearts(){
+  if (isPremium()) return;
+  if (state.globalHearts >= MAX_HEARTS) {
+    state.heartsRefillAt = null;
+    return;
+  }
+  if (!state.heartsRefillAt) {
+    state.heartsRefillAt = Date.now() + HEART_REFILL_MS;
+    return;
+  }
+  const now = Date.now();
+  while (state.heartsRefillAt && now >= state.heartsRefillAt && state.globalHearts < MAX_HEARTS) {
+    state.globalHearts++;
+    state.heartsRefillAt = state.globalHearts < MAX_HEARTS ? state.heartsRefillAt + HEART_REFILL_MS : null;
+  }
+}
+
+function heartsLabel(){
+  return isPremium() ? '∞' : String(state.globalHearts);
+}
+
+function nextHeartCountdown(){
+  if (isPremium() || !state.heartsRefillAt) return '';
+  const ms = Math.max(0, state.heartsRefillAt - Date.now());
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h}o ${m}min barru bihotz bat` : `${m}min barru bihotz bat`;
+}
+
+function refreshHeartsUI(){
+  regenHearts();
+  const topEl = document.getElementById('hearts-count');
+  if (topEl) topEl.textContent = heartsLabel();
+  const lessonEl = document.getElementById('lesson-hearts');
+  if (lessonEl && document.getElementById('screen-lesson').classList.contains('active')) {
+    lessonEl.textContent = isPremium() ? '∞' : state.hearts;
+  }
+}
+setInterval(refreshHeartsUI, 60000);
+
+/* ============ LOGIN / PERSISTENCE ============ */
+const hasStorage = (typeof window !== 'undefined') && !!window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+
+function withTimeout(promise, ms){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('storage-timeout')), ms))
+  ]);
+}
+
+function slugify(name){
+  return name.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'erabiltzailea';
+}
+
+function serializeState(){
+  return JSON.stringify({
+    completedLessons: Array.from(state.completedLessons),
+    lessonLevels: state.lessonLevels,
+    openedChests: Array.from(state.openedChests),
+    gems: state.gems,
+    streak: state.streak,
+    displayName: state.displayName,
+    avatar: state.avatar,
+    totalXp: state.totalXp,
+    xpToday: state.xpToday,
+    lastActiveDate: state.lastActiveDate,
+    friends: state.friends,
+    hiddenIncoming: state.hiddenIncoming,
+    kudosSentToday: state.kudosSentToday,
+    plan: state.plan,
+    globalHearts: state.globalHearts,
+    heartsRefillAt: state.heartsRefillAt,
+    challengeProgress: state.challengeProgress,
+    challengesClaimed: state.challengesClaimed,
+    challengeWeekStart: state.challengeWeekStart,
+  });
+}
+
+function serializePublicProfile(){
+  const mastered = Object.values(state.lessonLevels || {}).filter(lvl => lvl >= MAX_LEVEL).length;
+  return JSON.stringify({
+    displayName: state.displayName,
+    avatar: state.avatar,
+    completed: state.completedLessons.size,
+    total: lessons.length,
+    streak: state.streak,
+    totalXp: state.totalXp,
+    chests: state.openedChests.size,
+    mastered: mastered,
+    friendsCount: state.friends.length,
+    achievements: computeAchievements(achievementSnapshot()).filter(a => a.earned).map(a => a.id),
+  });
+}
+
+async function publishPublicProfile(){
+  if (!currentUser || !hasStorage) return;
+  try {
+    await withTimeout(window.storage.set('public:' + currentUser, serializePublicProfile(), true), 4000);
+  } catch (e) {
+    console.error('Ezin izan da profil publikoa argitaratu:', e);
+  }
+  updateDirectory();
+}
+
+async function updateDirectory(){
+  if (!currentUser || !hasStorage) return;
+  try {
+    let dir = [];
+    try {
+      const result = await withTimeout(window.storage.get('directory', true), 4000);
+      if (result && result.value) dir = JSON.parse(result.value);
+    } catch (e) { dir = []; }
+    if (!Array.isArray(dir)) dir = [];
+    const existingIdx = dir.findIndex(u => u.slug === currentUser);
+    const entry = { slug: currentUser, displayName: state.displayName, avatar: state.avatar };
+    if (existingIdx >= 0) dir[existingIdx] = entry;
+    else dir.push(entry);
+    await withTimeout(window.storage.set('directory', JSON.stringify(dir), true), 4000);
+  } catch (e) {
+    console.error('Ezin izan da zuzenbidea eguneratu:', e);
+  }
+}
+
+async function loadDirectory(){
+  if (!hasStorage) return [];
+  try {
+    const result = await withTimeout(window.storage.get('directory', true), 4000);
+    if (result && result.value) {
+      const dir = JSON.parse(result.value);
+      return Array.isArray(dir) ? dir : [];
+    }
+  } catch (e) { /* none yet or unavailable */ }
+  return [];
+}
+
+async function renderDirectory(){
+  const list = document.getElementById('directory-list');
+  list.innerHTML = '<div class="friends-empty">Kargatzen...</div>';
+  const dir = await loadDirectory();
+  const others = dir.filter(u => u.slug !== currentUser && !state.friends.includes(u.slug));
+  if (others.length === 0) {
+    list.innerHTML = '<div class="friends-empty">Ez dago erabiltzaile gehiagorik gehitzeko</div>';
+    return;
+  }
+  list.innerHTML = others.map(u => {
+    const initial = (u.displayName || '?').trim().charAt(0).toUpperCase() || '?';
+    const avatar = u.avatar || initial;
+    return `
+      <div class="friend-row">
+        <div class="friend-avatar">${avatar}</div>
+        <div class="friend-info">
+          <div class="fname">${u.displayName || u.slug}</div>
+        </div>
+        <button class="friend-remove" style="color:var(--green-deep); font-size:22px;" onclick="addFriendDirect('${u.slug}')" title="Gehitu laguna">+</button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function addFriendDirect(slug){
+  if (!slug || slug === currentUser || state.friends.includes(slug)) return;
+  state.friends.push(slug);
+  bumpChallenge('friends', 1);
+  saveProgress();
+  addToIncoming(slug); // so the other person automatically has you as a friend too
+  renderFriends();
+  renderDirectory();
+}
+
+async function saveProgress(){
+  if (!currentUser || !hasStorage) return;
+  try {
+    await withTimeout(window.storage.set('progress:' + currentUser, serializeState(), false), 4000);
+  } catch (e) {
+    console.error('Ezin izan da aurrerapena gorde:', e);
+  }
+  publishPublicProfile();
+}
+
+async function loadProgress(user){
+  if (!hasStorage) {
+    state = freshState();
+    state.challengeWeekStart = weekStartStr();
+    return false;
+  }
+  try {
+    const result = await withTimeout(window.storage.get('progress:' + user, false), 4000);
+    if (result && result.value) {
+      const data = JSON.parse(result.value);
+      state = freshState();
+      state.completedLessons = new Set(data.completedLessons || []);
+      state.lessonLevels = (data.lessonLevels && typeof data.lessonLevels === 'object') ? data.lessonLevels : {};
+      state.openedChests = new Set(data.openedChests || []);
+      state.gems = typeof data.gems === 'number' ? data.gems : 30;
+      state.streak = typeof data.streak === 'number' ? data.streak : 4;
+      state.displayName = data.displayName || '';
+      state.avatar = AVATAR_OPTIONS.includes(data.avatar) ? data.avatar : AVATAR_OPTIONS[0];
+      state.totalXp = typeof data.totalXp === 'number' ? data.totalXp : 0;
+      state.friends = Array.isArray(data.friends) ? data.friends : [];
+      state.hiddenIncoming = Array.isArray(data.hiddenIncoming) ? data.hiddenIncoming : [];
+      state.kudosSentToday = (data.kudosSentToday && typeof data.kudosSentToday === 'object') ? data.kudosSentToday : {};
+      state.plan = ['free', 'super', 'max'].includes(data.plan) ? data.plan : 'free';
+      state.globalHearts = typeof data.globalHearts === 'number' ? data.globalHearts : MAX_HEARTS;
+      state.heartsRefillAt = typeof data.heartsRefillAt === 'number' ? data.heartsRefillAt : null;
+      const today = todayStr();
+      if (data.lastActiveDate === today) {
+        state.xpToday = typeof data.xpToday === 'number' ? data.xpToday : 0;
+      } else {
+        state.xpToday = 0; // new day, goal resets
+      }
+      state.lastActiveDate = today;
+      const week = weekStartStr();
+      if (data.challengeWeekStart === week) {
+        state.challengeProgress = (data.challengeProgress && typeof data.challengeProgress === 'object') ? data.challengeProgress : {};
+        state.challengesClaimed = Array.isArray(data.challengesClaimed) ? data.challengesClaimed : [];
+      } else {
+        state.challengeProgress = {}; // new week, challenges reset
+        state.challengesClaimed = [];
+      }
+      state.challengeWeekStart = week;
+      return true;
+    }
+  } catch (e) {
+    // key not found, storage unavailable, or timed out -> treat as new profile
+  }
+  state = freshState();
+  state.lastActiveDate = todayStr();
+  state.challengeWeekStart = weekStartStr();
+  return false;
+}
+
+async function handleLogin(name){
+  const msg = document.getElementById('login-msg');
+  const submitBtn = document.querySelector('#login-form button');
+  msg.className = 'login-msg';
+  msg.textContent = 'Kargatzen...';
+  submitBtn.disabled = true;
+
+  currentUser = slugify(name);
+  let existed = false;
+  try {
+    existed = await loadProgress(currentUser);
+  } catch (e) {
+    state = freshState();
+    state.lastActiveDate = todayStr();
+  }
+  state.displayName = name.trim();
+  if (!existed || avatarManuallyChanged) {
+    state.avatar = selectedAvatar;
+  }
+  regenHearts();
+
+  document.getElementById('home-username').textContent = state.displayName;
+  if (!existed) {
+    saveProgress(); // fire and forget, never blocks entry
+  } else {
+    publishPublicProfile(); // keep directory/public snapshot fresh
+  }
+  if (!hasStorage) {
+    showToast('Aurrerapena ez da gordeko gailu honetan 💾');
+  }
+
+  msg.textContent = '';
+  submitBtn.disabled = false;
+  showScreen('screen-home');
+  buildPath();
+}
+
+function logout(){
+  currentUser = null;
+  state = freshState();
+  selectedAvatar = AVATAR_OPTIONS[0];
+  avatarManuallyChanged = false;
+  document.getElementById('login-input').value = '';
+  document.getElementById('login-msg').textContent = '';
+  renderAvatarGrid();
+  showScreen('screen-login');
+}
+
+/* ============ AVATAR PICKER ============ */
+function renderAvatarGrid(){
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = AVATAR_OPTIONS.map(a =>
+    `<button type="button" class="avatar-option ${a === selectedAvatar ? 'selected' : ''}" data-avatar="${a}">${a}</button>`
+  ).join('');
+  grid.querySelectorAll('.avatar-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedAvatar = btn.dataset.avatar;
+      avatarManuallyChanged = true;
+      document.getElementById('login-avatar-preview').textContent = selectedAvatar;
+      grid.querySelectorAll('.avatar-option').forEach(b => b.classList.toggle('selected', b.dataset.avatar === selectedAvatar));
+    });
+  });
+}
+renderAvatarGrid();
+
+document.getElementById('login-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const val = document.getElementById('login-input').value;
+  if (!val || !val.trim()) return;
+  handleLogin(val);
+});
+
+/* ============ AUDIO (TTS) ============ */
+const hasTTS = (typeof window !== 'undefined') && ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+let voices = [];
+function loadVoices(){
+  try { voices = speechSynthesis.getVoices() || []; } catch(e) { voices = []; }
+}
+if (hasTTS) {
+  try {
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  } catch(e) { /* ignore, audio buttons just won't produce sound */ }
+}
+
+function showToast(msg){
+  let t = document.getElementById('audio-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'audio-toast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#3C3C3C;color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;z-index:100;max-width:80vw;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; }, 2200);
+}
+
+function speak(text){
+  if (!hasTTS) {
+    showToast('Gailu honek ez du audioa onartzen 🔇');
+    return;
+  }
+  try {
+    loadVoices(); // re-check right before speaking, some browsers populate this lazily
+    speechSynthesis.cancel();
+    // small delay after cancel() avoids a common browser bug where the next
+    // speak() call is silently dropped if it fires in the same tick as cancel()
+    setTimeout(() => {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        let voice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('eu'));
+        if (!voice) voice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+        if (voice) u.voice = voice;
+        u.lang = voice ? voice.lang : 'es-ES';
+        u.rate = 0.85;
+        u.onerror = () => showToast('Ezin izan da audioa erreproduzitu ⚠️');
+        speechSynthesis.speak(u);
+        // Safety check: if nothing starts speaking shortly after, warn the user
+        setTimeout(() => {
+          if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+            showToast('Audioa ez da abiatu, saiatu berriro 🔁');
+          }
+        }, 400);
+      } catch (innerErr) {
+        showToast('Ezin izan da audioa erreproduzitu ⚠️');
+      }
+    }, 60);
+  } catch(e) {
+    showToast('Audioa ez dago eskuragarri gailu honetan 🔇');
+  }
+}
+
+/* ============ BUILD PATH ============ */
+function buildPath(){
+  const container = document.getElementById('path-container');
+  container.innerHTML = '';
+  let nodeCount = 0;
+
+  lessons.forEach((lesson, idx) => {
+    nodeCount++;
+    const completed = state.completedLessons.has(idx);
+    const unlocked = idx === 0 || state.completedLessons.has(idx - 1);
+    const isNext = unlocked && !completed;
+    const level = state.lessonLevels[idx] || 0;
+    const mastered = level >= MAX_LEVEL;
+
+    const node = document.createElement('div');
+    node.className = 'path-node';
+    node.innerHTML = `
+      <div class="node-wrap" style="position:relative; display:flex; flex-direction:column; align-items:center;">
+        ${isNext ? '<div class="start-tag">HASI</div>' : ''}
+        <button class="node-btn ${mastered ? 'mastered' : (completed ? 'done' : (unlocked ? 'available' : 'locked'))}" data-lesson="${idx}">
+          ${completed ? LEVEL_ICONS[level] || '⭐' : lesson.icon}
+        </button>
+        ${isNext ? '<div class="node-ring"></div>' : ''}
+        <div class="node-label">${lesson.title}${completed ? ' · Mv ' + level + '/' + MAX_LEVEL : ''}</div>
+      </div>
+    `;
+    container.appendChild(node);
+
+    if (chestAfter.includes(idx + 1)) {
+      const chestIdx = idx; // chest tied to unlocking after this lesson
+      const chestUnlocked = state.completedLessons.has(idx);
+      const chestOpened = state.openedChests.has(idx);
+      const cnode = document.createElement('div');
+      cnode.className = 'path-node';
+      cnode.innerHTML = `
+        <div class="node-wrap" style="position:relative; display:flex; flex-direction:column; align-items:center;">
+          <button class="node-btn chest ${chestUnlocked ? '' : 'locked'}" data-chest="${idx}">
+            ${chestOpened ? '🗝️' : '📦'}
+          </button>
+          <div class="node-label">Kutxa</div>
+        </div>
+      `;
+      container.appendChild(cnode);
+    }
+  });
+
+  container.querySelectorAll('.node-btn[data-lesson]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.lesson);
+      const unlocked = idx === 0 || state.completedLessons.has(idx - 1);
+      if (!unlocked) {
+        btn.classList.add('shake');
+        setTimeout(() => btn.classList.remove('shake'), 350);
+        return;
+      }
+      openLevelSelect(idx);
+    });
+  });
+
+  container.querySelectorAll('.node-btn[data-chest]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.chest);
+      const unlocked = state.completedLessons.has(idx);
+      openChestModal(idx, unlocked);
+    });
+  });
+
+  document.getElementById('gems-count').textContent = state.gems;
+  document.getElementById('streak-count').textContent = state.streak;
+  document.getElementById('hearts-count').textContent = heartsLabel();
+  refreshHeartsUI();
+}
+
+/* ============ LEVEL SELECT ============ */
+function openLevelSelect(idx){
+  const lesson = lessons[idx];
+  const currentLevel = state.lessonLevels[idx] || 0;
+  const overlay = document.getElementById('level-overlay');
+  document.getElementById('level-lesson-title').textContent = lesson.title;
+  const rowsWrap = document.getElementById('level-rows');
+  let rows = '';
+  for (let lvl = 1; lvl <= MAX_LEVEL; lvl++) {
+    const done = currentLevel >= lvl;
+    const playable = lvl === 1 || currentLevel >= lvl - 1;
+    rows += `
+      <button class="level-row ${done ? 'level-done' : (playable ? 'level-open' : 'level-locked')}"
+        ${playable ? `onclick="startLesson(${idx}, ${lvl}); document.getElementById('level-overlay').classList.remove('active');"` : ''}>
+        <span class="level-icon">${done ? (lvl === MAX_LEVEL ? '🏆' : '⭐') : (playable ? '▶️' : '🔒')}</span>
+        <span class="level-text">
+          <span class="level-name">${LEVEL_NAMES[lvl]}</span>
+          <span class="level-desc">${lvl === 1 ? 'Oinarrizkoa · ❤️'+LEVEL_HEARTS[1]+' behar' : (lvl === 2 ? 'Zailagoa · ❤️'+LEVEL_HEARTS[2]+' behar' : 'Aditua · ❤️'+LEVEL_HEARTS[3]+' behar')}</span>
+        </span>
+        ${done ? '<span class="level-check">✓</span>' : ''}
+      </button>
+    `;
+  }
+  rowsWrap.innerHTML = rows;
+  overlay.classList.add('active');
+}
+function closeLevelSelect(){
+  document.getElementById('level-overlay').classList.remove('active');
+}
+
+/* ============ CHEST MODAL ============ */
+function openChestModal(idx, unlocked){
+  const overlay = document.getElementById('chest-overlay');
+  const icon = document.getElementById('chest-icon-el');
+  const title = document.getElementById('chest-title');
+  const sub = document.getElementById('chest-sub');
+  const rewardRow = document.getElementById('reward-row');
+
+  overlay.classList.add('active');
+  icon.classList.remove('open');
+
+  if (!unlocked) {
+    icon.textContent = '📦';
+    title.textContent = 'Kutxa itxita dago';
+    sub.textContent = 'Desblokeatzeko, aurreko ikasgaia amaitu ezazu';
+    rewardRow.style.display = 'none';
+    return;
+  }
+
+  if (state.openedChests.has(idx)) {
+    icon.textContent = '🗝️';
+    title.textContent = 'Jadanik ireki duzu';
+    sub.textContent = 'Saria jaso duzu dagoeneko';
+    rewardRow.style.display = 'none';
+    return;
+  }
+
+  const rewardGems = 15 + Math.floor(Math.random() * 20);
+  const rewardXp = 10 + Math.floor(Math.random() * 15);
+  state.gems += rewardGems;
+  state.openedChests.add(idx);
+  bumpChallenge('chests', 1);
+  saveProgress();
+
+  setTimeout(() => {
+    icon.textContent = '💰';
+    icon.classList.add('open');
+    title.textContent = 'Kutxa ireki duzu!';
+    sub.textContent = 'Hau da zure saria';
+    document.getElementById('reward-gems').textContent = rewardGems;
+    document.getElementById('reward-xp').textContent = rewardXp;
+    rewardRow.style.display = 'flex';
+  }, 120);
+}
+function closeChest(){
+  document.getElementById('chest-overlay').classList.remove('active');
+  buildPath();
+}
+
+/* ============ LESSON FLOW ============ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buildExercisesForLesson(lesson, level){
+  const exs = [];
+  const distractorCount = level >= 2
+    ? Math.min(4, lesson.words.length - 1)  // up to 5 options total on levels 2-3
+    : Math.min(3, lesson.words.length - 1); // up to 4 options total on level 1
+
+  lesson.words.forEach((w, i) => {
+    const distractors = lesson.words.filter((_, j) => j !== i).map(x => x.es);
+    const options = shuffle([w.es, ...shuffle(distractors).slice(0, distractorCount)]);
+    exs.push({ type: 'translate', word: w, options });
+  });
+  lesson.words.forEach((w, i) => {
+    const distractors = lesson.words.filter((_, j) => j !== i).map(x => x.eu);
+    const options = shuffle([w.eu, ...shuffle(distractors).slice(0, distractorCount)]);
+    exs.push({ type: 'listen', word: w, options });
+  });
+  if (level >= 2) {
+    // Reverse direction: shown the Spanish meaning, must pick the correct Basque word
+    lesson.words.forEach((w, i) => {
+      const distractors = lesson.words.filter((_, j) => j !== i).map(x => x.eu);
+      const options = shuffle([w.eu, ...shuffle(distractors).slice(0, distractorCount)]);
+      exs.push({ type: 'reverse', word: w, options });
+    });
+  }
+  return shuffle(exs); // use every exercise generated, nothing trimmed
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startLesson(idx, level){
+  level = level || 1;
+  const required = LEVEL_HEARTS[level] || 4;
+  regenHearts();
+
+  if (!isPremium() && state.globalHearts < required) {
+    document.getElementById('level-overlay').classList.remove('active');
+    openHeartsModal(required);
+    return;
+  }
+
+  state.currentLessonIdx = idx;
+  state.currentLevel = level;
+  state.exercises = buildExercisesForLesson(lessons[idx], level);
+  state.exIdx = 0;
+  state.correctCount = 0;
+  state.answered = false;
+  state.hearts = isPremium() ? Infinity : state.globalHearts;
+  document.getElementById('lesson-hearts').textContent = isPremium() ? '∞' : state.hearts;
+  showScreen('screen-lesson');
+  renderExercise();
+}
+
+/* ============ HEARTS MODAL ============ */
+function openHeartsModal(required){
+  const overlay = document.getElementById('hearts-overlay');
+  document.getElementById('hearts-required-msg').textContent = required
+    ? `Maila hau hasteko gutxienez ${required} bihotz behar dituzu.`
+    : 'Ez duzu bihotzik gelditzen.';
+  const countdown = document.getElementById('hearts-countdown');
+  const c = nextHeartCountdown();
+  countdown.textContent = c ? c + ' berreskuratuko duzu' : '';
+  overlay.classList.add('active');
+}
+function closeHeartsModal(){
+  document.getElementById('hearts-overlay').classList.remove('active');
+}
+function upgradeFromHeartsModal(plan){
+  activatePlan(plan);
+  closeHeartsModal();
+}
+
+function exitLesson(){
+  showScreen('screen-home');
+  buildPath();
+}
+
+function renderExercise(){
+  const total = state.exercises.length;
+  const pct = Math.round((state.exIdx / total) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('bottom-bar').style.display = 'none';
+  document.getElementById('bottom-bar').className = 'bottom-bar';
+  state.answered = false;
+
+  const ex = state.exercises[state.exIdx];
+  const wrap = document.getElementById('exercise-wrap');
+
+  if (ex.type === 'translate') {
+    wrap.innerHTML = `
+      <div class="ex-kicker">Aukeratu itzulpen zuzena</div>
+      <div class="word-card">
+        <button class="audio-btn" onclick="speak('${ex.word.eu.replace(/'/g,"\\'")}')">🔊</button>
+        <div class="word-basque">${ex.word.eu}</div>
+      </div>
+      <div class="options" id="opt-container">
+        ${ex.options.map(o => `<button class="opt-btn" data-val="${o}">${o}</button>`).join('')}
+      </div>
+    `;
+  } else if (ex.type === 'reverse') {
+    wrap.innerHTML = `
+      <div class="ex-kicker">Aukeratu euskarazko itzulpena</div>
+      <div class="word-card">
+        <div class="word-basque">${ex.word.es}</div>
+      </div>
+      <div class="options" id="opt-container">
+        ${ex.options.map(o => `<button class="opt-btn" data-val="${o}">${o}</button>`).join('')}
+      </div>
+    `;
+  } else {
+    wrap.innerHTML = `
+      <div class="ex-kicker">Entzun eta aukeratu hitz zuzena</div>
+      <div class="listen-hero">
+        <button class="audio-btn" onclick="speak('${ex.word.eu.replace(/'/g,"\\'")}')">🔊</button>
+      </div>
+      <div class="options" id="opt-container">
+        ${ex.options.map(o => `<button class="opt-btn" data-val="${o}">${o}</button>`).join('')}
+      </div>
+    `;
+    setTimeout(() => speak(ex.word.eu), 300);
+  }
+
+  document.querySelectorAll('#opt-container .opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectOption(btn, ex));
+  });
+}
+
+function selectOption(btn, ex){
+  if (state.answered) return;
+  state.answered = true;
+
+  const correctVal = ex.type === 'translate' ? ex.word.es : ex.word.eu;
+  const isCorrect = btn.dataset.val === correctVal;
+
+  document.querySelectorAll('#opt-container .opt-btn').forEach(b => {
+    b.style.pointerEvents = 'none';
+    if (b.dataset.val === correctVal) b.classList.add('correct');
+    else if (b === btn) b.classList.add('wrong');
+  });
+
+  const bar = document.getElementById('bottom-bar');
+  bar.style.display = 'block';
+  const ft = document.getElementById('feedback-text');
+  const fs = document.getElementById('feedback-sub');
+
+  if (isCorrect) {
+    bar.className = 'bottom-bar state-correct';
+    ft.className = 'feedback-text correct';
+    ft.textContent = 'Ondo egina!';
+    fs.textContent = '';
+    state.correctCount++;
+  } else {
+    bar.className = 'bottom-bar state-wrong';
+    ft.className = 'feedback-text wrong';
+    ft.textContent = 'Ez da zuzena';
+    fs.textContent = 'Erantzun zuzena: ' + correctVal;
+    if (!isPremium()) {
+      state.globalHearts = Math.max(0, state.globalHearts - 1);
+      if (!state.heartsRefillAt && state.globalHearts < MAX_HEARTS) {
+        state.heartsRefillAt = Date.now() + HEART_REFILL_MS;
+      }
+      state.hearts = state.globalHearts;
+      saveProgress();
+    }
+    document.getElementById('lesson-hearts').textContent = isPremium() ? '∞' : state.hearts;
+  }
+  document.getElementById('continue-btn').textContent = 'Jarraitu';
+}
+
+function nextExercise(){
+  if (!state.answered) return;
+
+  if (!isPremium() && state.globalHearts <= 0) {
+    failLesson();
+    return;
+  }
+
+  state.exIdx++;
+  if (state.exIdx >= state.exercises.length) {
+    finishLesson();
+  } else {
+    renderExercise();
+  }
+}
+
+function failLesson(){
+  document.getElementById('bottom-bar').style.display = 'none';
+  showScreen('screen-hearts-fail');
+}
+
+function finishLesson(){
+  const total = state.exercises.length;
+  const acc = Math.round((state.correctCount / total) * 100);
+  const xpEarned = state.correctCount * 10 * xpMultiplier();
+  const idx = state.currentLessonIdx;
+  const level = state.currentLevel || 1;
+
+  state.completedLessons.add(idx);
+  state.lessonLevels[idx] = Math.max(state.lessonLevels[idx] || 0, level);
+  state.gems += Math.floor(xpEarned / 5);
+  state.streak += 1;
+  state.totalXp += xpEarned;
+  state.xpToday += xpEarned;
+  state.lastActiveDate = todayStr();
+  bumpChallenge('lessons', 1);
+  bumpChallenge('xp', xpEarned);
+  if (state.correctCount === total) bumpChallenge('perfect', 1);
+  saveProgress();
+
+  document.getElementById('summary-xp').textContent = xpEarned + ' XP' + (xpMultiplier() > 1 ? ' (x2 Max!)' : '');
+  document.getElementById('summary-acc').textContent = acc + '%';
+  const levelLine = document.getElementById('summary-level');
+  if (levelLine) {
+    levelLine.textContent = LEVEL_NAMES[level] + (level >= MAX_LEVEL ? ' burututa · Maisutasuna lortu duzu! 🏆' : ' burututa');
+  }
+  showScreen('screen-summary');
+}
+
+function backToPath(){
+  showScreen('screen-home');
+  buildPath();
+}
+
+/* ============ PROFILE & DAILY GOAL ============ */
+function goalMessage(){
+  if (state.xpToday >= DAILY_GOAL_XP) return 'Helburua bete duzu gaur! Zorionak! 🎉';
+  if (state.streak >= 7) return 'Ederra zure jarraipena, ez galdu! 🔥';
+  if (state.xpToday > 0) return 'Ondo goaz, jarraitu horrela! 💪';
+  return 'Osatu ikasgai bat gaurko helburua betetzeko.';
+}
+
+function updateDailyGoalUI(){
+  const pct = Math.min(100, Math.round((state.xpToday / DAILY_GOAL_XP) * 100));
+  document.getElementById('goal-progress-fill').style.width = pct + '%';
+  document.getElementById('goal-sub').textContent = Math.min(state.xpToday, DAILY_GOAL_XP) + ' / ' + DAILY_GOAL_XP + ' XP gaur';
+  document.getElementById('goal-msg').textContent = goalMessage();
+}
+
+function renderChallenges(){
+  const list = document.getElementById('challenges-list');
+  list.innerHTML = CHALLENGES.map(c => {
+    const progress = Math.min(c.target, state.challengeProgress[c.metric] || 0);
+    const pct = Math.round((progress / c.target) * 100);
+    const done = progress >= c.target;
+    const claimed = state.challengesClaimed.includes(c.id);
+    let btnLabel = 'Jaso';
+    let btnClass = 'challenge-claim';
+    let disabled = !done || claimed;
+    if (claimed) { btnLabel = '✓ Jasota'; btnClass += ' claimed'; }
+    return `
+      <div class="challenge-row">
+        <div class="challenge-top">
+          <div class="challenge-label"><span>${c.icon}</span> ${c.title}</div>
+          <div class="challenge-reward">💎 ${c.reward}</div>
+        </div>
+        <div class="challenge-track"><div class="challenge-fill ${done ? 'done' : ''}" style="width:${pct}%"></div></div>
+        <div class="challenge-bottom">
+          <div class="challenge-count">${progress} / ${c.target}</div>
+          <button class="${btnClass}" ${disabled ? 'disabled' : ''} onclick="claimChallenge('${c.id}')">${btnLabel}</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function claimChallenge(id){
+  const c = CHALLENGES.find(ch => ch.id === id);
+  if (!c) return;
+  const progress = state.challengeProgress[c.metric] || 0;
+  if (progress < c.target || state.challengesClaimed.includes(id)) return;
+  state.challengesClaimed.push(id);
+  state.gems += c.reward;
+  saveProgress();
+  renderChallenges();
+  document.getElementById('profile-gems').textContent = state.gems;
+  showToast(c.title + ' osatuta! +' + c.reward + ' 💎');
+}
+
+async function renderLeague(){
+  const { idx, current, next } = getLeague(state.totalXp);
+  document.getElementById('league-icon').textContent = current.icon;
+  document.getElementById('league-name').textContent = current.name;
+  document.getElementById('league-xp-sub').textContent = state.totalXp + ' XP guztira';
+
+  const fill = document.getElementById('league-progress-fill');
+  const nextSub = document.getElementById('league-next-sub');
+  if (next) {
+    const span = next.minXp - current.minXp;
+    const pct = Math.min(100, Math.round(((state.totalXp - current.minXp) / span) * 100));
+    fill.style.width = pct + '%';
+    nextSub.textContent = (next.minXp - state.totalXp) + ' XP falta ' + next.name + ' lortzeko';
+  } else {
+    fill.style.width = '100%';
+    nextSub.textContent = 'Liga gorena lortu duzu! 🏆';
+  }
+
+  const list = document.getElementById('league-rank-list');
+  list.innerHTML = '<div class="friends-empty">Kargatzen...</div>';
+
+  const dir = await loadDirectory();
+  const others = dir.filter(u => u.slug !== currentUser);
+  const results = await Promise.all(others.map(async (u) => {
+    const data = await fetchPublicProfile(u.slug);
+    return data ? { slug: u.slug, displayName: data.displayName, avatar: data.avatar, totalXp: data.totalXp || 0 } : null;
+  }));
+  const sameLeague = results
+    .filter(r => r && getLeague(r.totalXp).idx === idx)
+    .concat([{ slug: currentUser, displayName: state.displayName, avatar: state.avatar, totalXp: state.totalXp, self: true }])
+    .sort((a, b) => b.totalXp - a.totalXp);
+
+  if (sameLeague.length <= 1) {
+    list.innerHTML = '<div class="friends-empty">Oraindik ez dago beste inor liga honetan</div>';
+    return;
+  }
+
+  list.innerHTML = sameLeague.map((r, i) => `
+    <div class="friend-row" style="${r.self ? 'border:2px solid var(--purple);' : ''}">
+      <div class="friend-avatar">${i + 1}</div>
+      <div class="friend-info">
+        <div class="fname">${r.avatar || '🦉'} ${r.displayName || r.slug}${r.self ? ' (zu)' : ''}</div>
+        <div class="fstage">${r.totalXp} XP</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openProfile(){
+  showScreen('screen-profile');
+  document.getElementById('profile-avatar').textContent = state.avatar || '🦉';
+  document.getElementById('profile-name').textContent = state.displayName || 'Erabiltzailea';
+  document.getElementById('profile-handle').textContent = '@' + (currentUser || 'erabiltzailea');
+  document.getElementById('profile-streak').textContent = state.streak;
+  document.getElementById('profile-gems').textContent = state.gems;
+  document.getElementById('profile-completed').textContent = state.completedLessons.size + '/' + lessons.length;
+  updateDailyGoalUI();
+  renderLeague();
+  renderAchievements();
+  renderKudos();
+  renderChallenges();
+  renderHeartsCard();
+  renderPlans();
+  renderFriends();
+  renderDirectory();
+  publishPublicProfile(); // keep the public snapshot fresh so friends can always find you
+}
+
+function renderHeartsCard(){
+  regenHearts();
+  const el = document.getElementById('hearts-current-display');
+  const cd = document.getElementById('hearts-countdown-inline');
+  if (isPremium()) {
+    el.textContent = '❤️ Mugagabea';
+    cd.textContent = '';
+  } else {
+    el.textContent = '❤️ ' + state.globalHearts + ' / ' + MAX_HEARTS;
+    cd.textContent = nextHeartCountdown();
+  }
+}
+
+/* ============ PLANS ============ */
+const PLANS = {
+  free: {
+    name: 'Doakoa',
+    features: ['5 bihotz gehienez, denborarekin berreskuratzen dira', 'Eguneroko helburua eta kutxak', 'Ikasgai guztiak eskuragarri'],
+  },
+  super: {
+    name: 'Super Euskaldun',
+    features: ['Bihotz mugagabeak', 'Ez duzu inoiz gelditu behar bihotzik gabe', 'Doakoaren guztia'],
+  },
+  max: {
+    name: 'Euskaldun Max',
+    features: ['Super Euskaldun-en guztia', 'XP bikoitza ikasgai bakoitzeko', 'Koroa berezia profilean'],
+  },
+};
+
+function renderPlans(){
+  const list = document.getElementById('plans-list');
+  list.innerHTML = Object.keys(PLANS).map(key => {
+    const plan = PLANS[key];
+    const isCurrent = state.plan === key;
+    const cls = 'plan-card plan-' + key + (isCurrent ? ' plan-current' : '');
+    const btn = isCurrent
+      ? `<button class="btn retry plan-btn" disabled style="opacity:.6;">Plan aktiboa</button>`
+      : key === 'free'
+        ? `<button class="btn retry plan-btn" onclick="activatePlan('free')">Itzuli doakora</button>`
+        : `<button class="btn primary plan-btn" onclick="activatePlan('${key}')">Aktibatu doan</button>`;
+    return `
+      <div class="${cls}">
+        <div class="plan-name">${plan.name} ${isCurrent ? '<span class="plan-badge">Aktibo</span>' : ''}</div>
+        <ul class="plan-feats">${plan.features.map(f => `<li>${f}</li>`).join('')}</ul>
+        ${btn}
+      </div>
+    `;
+  }).join('');
+}
+
+function activatePlan(plan){
+  if (!PLANS[plan]) return;
+  state.plan = plan;
+  if (plan !== 'free') {
+    state.globalHearts = MAX_HEARTS;
+    state.heartsRefillAt = null;
+  }
+  saveProgress();
+  renderHeartsCard();
+  renderPlans();
+  showToast(plan === 'free' ? 'Doako planera itzuli zara' : (PLANS[plan].name + ' aktibatuta! 🎉'));
+}
+
+function closeProfile(){
+  showScreen('screen-home');
+  buildPath();
+}
+
+/* ============ FRIENDS ============ */
+async function fetchPublicProfile(slug){
+  if (!hasStorage) return null;
+  try {
+    const result = await withTimeout(window.storage.get('public:' + slug, true), 4000);
+    if (result && result.value) return JSON.parse(result.value);
+  } catch (e) { /* not found or unavailable */ }
+  return null;
+}
+
+async function addToIncoming(targetSlug){
+  if (!hasStorage || !currentUser) return;
+  try {
+    let incoming = [];
+    try {
+      const result = await withTimeout(window.storage.get('incoming:' + targetSlug, true), 4000);
+      if (result && result.value) incoming = JSON.parse(result.value);
+    } catch (e) { incoming = []; }
+    if (!Array.isArray(incoming)) incoming = [];
+    if (!incoming.includes(currentUser)) {
+      incoming.push(currentUser);
+      await withTimeout(window.storage.set('incoming:' + targetSlug, JSON.stringify(incoming), true), 4000);
+    }
+  } catch (e) {
+    console.error('Ezin izan da elkarrekikotasuna gorde:', e);
+  }
+}
+
+async function loadIncomingFriends(){
+  if (!hasStorage || !currentUser) return [];
+  try {
+    const result = await withTimeout(window.storage.get('incoming:' + currentUser, true), 4000);
+    if (result && result.value) {
+      const arr = JSON.parse(result.value);
+      return Array.isArray(arr) ? arr : [];
+    }
+  } catch (e) { /* none yet or unavailable */ }
+  return [];
+}
+
+function renderAchievements(){
+  const grid = document.getElementById('achievements-grid');
+  const earnedList = computeAchievements(achievementSnapshot());
+  grid.innerHTML = earnedList.map(a => `
+    <div class="badge ${a.earned ? 'earned' : ''}" title="${a.title}">
+      <div class="badge-icon">${a.icon}</div>
+      <div class="badge-title">${a.title}</div>
+    </div>
+  `).join('');
+}
+
+async function renderKudos(){
+  const list = document.getElementById('kudos-list');
+  list.innerHTML = '<div class="friends-empty">Kargatzen...</div>';
+  const kudos = await loadKudos();
+  if (kudos.length === 0) {
+    list.innerHTML = '<div class="friends-empty">Oraindik ez duzu animorik jaso</div>';
+    return;
+  }
+  list.innerHTML = kudos.slice(0, 15).map(k => `
+    <div class="friend-row">
+      <div class="friend-avatar">${k.avatar || '🦉'}</div>
+      <div class="friend-info">
+        <div class="fname">${k.fromName || k.from}</div>
+        <div class="fstage">${k.text || 'Animo bat bidali dizu'} · ${timeAgo(k.ts)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function handleSendKudos(slug, btn){
+  if (state.kudosSentToday[slug] === todayStr()) return;
+  if (btn) btn.disabled = true;
+  const msg = KUDOS_MESSAGES[Math.floor(Math.random() * KUDOS_MESSAGES.length)];
+  const ok = await sendKudos(slug, msg.id);
+  if (ok) {
+    state.kudosSentToday[slug] = todayStr();
+    saveProgress();
+    showToast('Animoa bidali duzu! 👏');
+  } else {
+    showToast('Ezin izan da animoa bidali ⚠️');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function renderFriends(){
+  const list = document.getElementById('friends-list');
+  list.innerHTML = '<div class="friends-empty">Kargatzen...</div>';
+
+  const incoming = await loadIncomingFriends();
+  const visibleIncoming = incoming.filter(s => !state.hiddenIncoming.includes(s));
+  const allSlugs = Array.from(new Set([...(state.friends || []), ...visibleIncoming]));
+
+  if (allSlugs.length === 0) {
+    list.innerHTML = '<div class="friends-empty">Oraindik ez duzu lagunik gehitu</div>';
+    return;
+  }
+
+  const rows = await Promise.all(allSlugs.map(async (slug) => {
+    const data = await fetchPublicProfile(slug);
+    const name = data ? data.displayName : slug;
+    const stage = data ? (data.completed + '/' + data.total + ' ikasgai · 🔥 ' + data.streak) : 'Ez eskuragarri';
+    const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+    const avatar = (data && data.avatar) ? data.avatar : initial;
+    const mutual = state.friends.includes(slug);
+    const badgeIcons = (data && Array.isArray(data.achievements))
+      ? data.achievements.map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean).slice(0, 5).map(a => `<span title="${a.title}">${a.icon}</span>`).join('')
+      : '';
+    const sentToday = state.kudosSentToday[slug] === todayStr();
+    return `
+      <div class="friend-row">
+        <div class="friend-avatar">${avatar}</div>
+        <div class="friend-info">
+          <div class="fname">${name}</div>
+          <div class="fstage">${stage}${mutual ? '' : ' · Lagun gisa gehitu zaitu'}</div>
+          ${badgeIcons ? `<div class="mini-badges">${badgeIcons}</div>` : ''}
+        </div>
+        <button class="kudos-btn" ${sentToday ? 'disabled' : ''} onclick="handleSendKudos('${slug}', this)" title="${sentToday ? 'Gaur bidalita' : 'Bidali animoa'}">👏</button>
+        <button class="friend-remove" onclick="removeFriend('${slug}')" title="Kendu laguna">✕</button>
+      </div>
+    `;
+  }));
+  list.innerHTML = rows.join('');
+}
+
+async function addFriend(name){
+  const msg = document.getElementById('friend-msg');
+  msg.className = 'friend-msg';
+  const slug = slugify(name);
+
+  if (!slug || slug === currentUser) {
+    msg.classList.add('error');
+    msg.textContent = 'Ezin duzu zeure burua gehitu.';
+    return;
+  }
+  if (state.friends.includes(slug)) {
+    msg.classList.add('error');
+    msg.textContent = 'Jadanik zure laguna da.';
+    return;
+  }
+
+  msg.textContent = 'Bilatzen...';
+  let data = await fetchPublicProfile(slug);
+  if (!data) {
+    // Fallback: the public snapshot may have failed to save, but the directory entry might still exist
+    const dir = await loadDirectory();
+    const entry = dir.find(u => u.slug === slug);
+    if (entry) data = { displayName: entry.displayName, avatar: entry.avatar, completed: 0, total: lessons.length, streak: 0 };
+  }
+  if (!data) {
+    msg.classList.add('error');
+    msg.textContent = 'Ez da erabiltzailerik aurkitu izen horrekin.';
+    return;
+  }
+
+  state.friends.push(slug);
+  bumpChallenge('friends', 1);
+  msg.textContent = data.displayName + ' gehitu duzu!';
+  saveProgress();
+  addToIncoming(slug); // so the other person automatically has you as a friend too
+  renderFriends();
+}
+
+function removeFriend(slug){
+  state.friends = state.friends.filter(f => f !== slug);
+  if (!state.hiddenIncoming.includes(slug)) state.hiddenIncoming.push(slug);
+  saveProgress();
+  renderFriends();
+  document.getElementById('friend-msg').textContent = '';
+}
+
+document.getElementById('add-friend-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('friend-input');
+  const val = input.value;
+  if (!val || !val.trim()) return;
+  addFriend(val);
+  input.value = '';
+});
+
+/* ============ INIT ============ */
+// Path is built after a successful login (see handleLogin), not on page load.
+</script>
+</body>
+</html>
